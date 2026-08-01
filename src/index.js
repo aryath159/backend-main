@@ -8,7 +8,7 @@ import express from 'express'
 //  one approach - write code in another file 
 import connectDB from "./db/index.js";
 
-const app = express() ;
+import { app } from './app.js'
 
 dotenv.config({
     path: './.env'
