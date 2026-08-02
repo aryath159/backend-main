@@ -1,4 +1,4 @@
-import { v2 as claudinary } from "cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 
 cloudinary.config({
@@ -7,20 +7,20 @@ cloudinary.config({
   api_secret: process.env.CLAUDINARY_API_SECRET,
 });
 
-const uploadFileOnClaudinary = async (localfilepath) => {
+const uploadFileOnCloudinary = async (localfilepath) => {
   try {
     if (!localfilepath) {
       return null;
     }
 
     //uploding file on claudinary
-    const resp = await claudinary.uploader.upload(localfilepath, {
+    const resp = await cloudinary.uploader.upload(localfilepath, {
       resource_type: "auto",
     });
 
     console.log("file uploaded on cloudinary successfully : ", resp.url);
+    fs.unlinkSync(localfilepath);   
     return resp ;
-    // fs.unlinkSync(localfilepath);   
 
   } catch (error) {
         // Clean up local file synchronously if upload operation fails
@@ -33,4 +33,4 @@ const uploadFileOnClaudinary = async (localfilepath) => {
   }
 };
 
-export { uploadFileOnClaudinary } ;
+export { uploadFileOnCloudinary } ;

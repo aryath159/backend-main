@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import {ApiError}  from '../utils/ApiError.js'
-import {User, User} from '../models/user.models.js'
-import {uploadFileOnClaudinary} from '../utils/claudinary.js'
+import { User } from '../models/user.models.js'
+import {uploadFileOnCloudinary} from '../utils/claudinary.js'
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 // parameter to async handler is a function
@@ -30,7 +30,7 @@ const registerUser = asyncHandler( async (req , res) =>{
     }
 
 
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or : [{ username }, { email }]
     })
 
@@ -39,14 +39,20 @@ const registerUser = asyncHandler( async (req , res) =>{
     }
 
     const avatarlocalpath = req.files?.avatar[0]?.path ;
-    const coverImagepath = req.files?.coverImage[0]?.path ;
+    //const coverImagepath = req.files?.coverImage[0]?.path ;
+    let coverImagepath = "";
+
+    if(req.files &&  Array.isArray(req.files.coverImage) && 
+        req.files.coverImage.length > 0){
+            coverImagepath =  req.files.coverImage[0].path ;
+        }
 
     if(!avatarlocalpath){
         throw new ApiError(400 , "avatar file is required") ;
     }
 
-    const avatar = await uploadFileOnClaudinary(avatarlocalpath) ;
-    const coverImage = await uploadFileOnClaudinary(coverImagepath) ;
+    const avatar = await uploadFileOnCloudinary(avatarlocalpath) ;
+    const coverImage = await uploadFileOnCloudinary(coverImagepath) ;
 
     if(!avatar)
     {
@@ -74,10 +80,10 @@ const registerUser = asyncHandler( async (req , res) =>{
 
     }
 
+    console.log("all done ....")
     return res.status(201).json(
         new ApiResponse(200 , createdUser , "user registered successfully")
     )
-
 
 
 
