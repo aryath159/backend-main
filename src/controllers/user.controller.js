@@ -174,8 +174,8 @@ const loginUser = asyncHandler( async (req ,res) => {
 const logoutUser = asyncHandler(async (req, res ) =>{
     await User.findByIdAndUpdate(
         req.user._id , {
-            $set : {
-                refreshToken : "undefined"
+            $unset : {
+                refreshToken : 1
             }
         },
         {
@@ -248,19 +248,19 @@ const RefreshAccessToken = asyncHandler(async (req , res) =>{
 const changeCurrentPassword = asyncHandler( async(req , res) =>{
 
     const {oldPassword ,  newPassword } = req.body 
-
-    const user = await User.findById(re.user?._id)
-
+    console.log("step 1 \n")
+    const user = await User.findById(req.user?._id)
+    console.log("step 2 \n")
     const is_pass_correct = user.ispasswordCorrect(oldPassword) ;
-
+    console.log("step 3 \n")
     if(!is_pass_correct){
         throw new ApiError(400, "invalid old password")
     }
-
+    console.log("step 4 \n")
     user.password = newPassword
 
     await user.save({validateBeforeSave : false})
-
+    console.log("step 5 \n")
 
     return res
     .status(200)
@@ -336,7 +336,7 @@ const coverImageUpdate = asyncHandler(async (req, res)=>{
         throw new ApiError(400 , "cover image file is missing")
     }
 
-    const coverImage = await uploadFileOnCloudinary(avatarLocalPath) ;
+    const coverImage = await uploadFileOnCloudinary(coverLocalPath) ;
 
     if(!coverImage){
         throw new  ApiError(400 , "error while uploading  avatar on cloudinary")
@@ -356,13 +356,13 @@ const coverImageUpdate = asyncHandler(async (req, res)=>{
 
     return res
     .status(200)
-    .json(new ApiResponse(200 , user , "civer image updated successfully"))
+    .json(new ApiResponse(200 , user , "cover image updated successfully"))
 })
 
-const getUserChannelProfle = asyncHandler( async (req, res) =>{
+const getUserChannelProfile = asyncHandler( async (req, res) =>{
 
-    const {username} = req.params ;
-
+    const {username} = req.params 
+    console.log("usernmae : " , username) 
     if(!username){
         throw new ApiError(400 , "username is missing ") ;
     }
@@ -492,5 +492,5 @@ const getWatchHistory = asyncHandler(async (req , res) =>{
 
 export { registerUser , loginUser , logoutUser , RefreshAccessToken , changeCurrentPassword ,
         getCurrentUser , UpdateAccountDetails , userAvatarUpdate , coverImageUpdate ,
-         getUserChannelProfle , getWatchHistory
+         getUserChannelProfile , getWatchHistory
 }

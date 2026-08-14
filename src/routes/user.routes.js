@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { changeCurrentPassword, coverImageUpdate, getCurrentUser, getUserChannelProfle, getWatchHistory, loginUser, logoutUser,
+import { changeCurrentPassword, coverImageUpdate, getCurrentUser, getUserChannelProfile, getWatchHistory, loginUser, logoutUser,
          RefreshAccessToken, registerUser, 
          UpdateAccountDetails,
          userAvatarUpdate} from "../controllers/user.controller.js";
@@ -23,28 +23,28 @@ router.route("/register").post(
         }
     ]) ,
 
-    registerUser) ;
+    registerUser) ; // tested ok
 
 
 
-router.route("/login" ).post(loginUser)
+router.route("/login" ).post(loginUser) // tested ok 
 
 //secured routes 
-router.route("/logout").post( verifyJWT , logoutUser)
+router.route("/logout").post( verifyJWT , logoutUser) // tested ok
 
-router.route("/refresh-token").post(RefreshAccessToken)
+router.route("/refresh-token").post(RefreshAccessToken) // tested ok
 
-router.route("/change-password").post(verifyJWT , changeCurrentPassword)
+router.route("/change-password").post(verifyJWT , changeCurrentPassword) // tested ok
 
-router.route("/current-user").get(verifyJWT , getCurrentUser)
+router.route("/current-user").get(verifyJWT , getCurrentUser) // tested ok
 
-router.route("/update-account").patch(verifyJWT , UpdateAccountDetails)
+router.route("/update-account").patch(verifyJWT , UpdateAccountDetails) // tested ok
 
-router.route("/avatar").patch(verifyJWT , upload.single("avatar") , userAvatarUpdate)
+router.route("/avatar").patch(verifyJWT , upload.single("avatar") , userAvatarUpdate) // tested ok
 
-router.route("/cover-image").patch(verifyJWT , upload.single("/coverImage") , coverImageUpdate)
+router.route("/cover-image").patch(verifyJWT , upload.single("coverImage") , coverImageUpdate) // tested ok
 
-router.route("/c/:username").get(verifyJWT , getUserChannelProfle)
+router.route("/c/:username").get(verifyJWT , getUserChannelProfile) 
 
 router.route("/history").get(verifyJWT , getWatchHistory) 
 
