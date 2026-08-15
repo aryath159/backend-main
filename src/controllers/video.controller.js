@@ -338,11 +338,81 @@ const updateVideo = asyncHandler(async(req, res)=>{
 const deleteVideo = asyncHandler(async(req, res)=>{
     const {videoId} = req.params
 
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(400 , "invalid videoId")
+    }
+
+    const video = await  Video.findById(videoId);
+
+    if(!videoId){
+        throw new ApiError(400 , "no video found") ;
+    }
+
+    if(video?.owner.toString() !== req.user?._id.toString()){
+        throw new ApiError(400 , "you cant delete this video you are  not owner")
+
+    }
+
+    const videoDeleted = await Video.findByIdAndDelete(video?._id);
+
+    if(!videoDeleted){
+        throw new ApiError(400 , "failed to delete video plz try again")
+
+    }
+
+    await deleteOnCloudinary(video.thumbnail.public_id) ; // video model has thumbnail public_id stored in it->check videoModel
+    await deleteOnCloudinary(video.videoFile.public_id , "video"); // // specify video while deleting video
+
+    //delete video likes
+    await Comment.deleteMany({
+        video: videoId,
+    })
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200,{},"video deleted successfully"));
+
+
+
 
 })
 
+// toggle publish status of a video
 const togglePublishStatus = asyncHandler(async(req , res) =>{
     const {videoId} = req.params
+
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(400 , "invalid videoid")
+    }
+
+    const video = await Video.findById(videoId) ;
+
+    if(!video){
+        throw new ApiError(404 ,"video not found")        
+    }
+
+    if(video?.owner.toString() !== req.user?._id.toString()){
+        throw new ApiError(400 , "you cant toggle publish status as you are notthe owner")
+    }
+
+    const toggleVideoPublish = await Video.findByIdAndUpdate(
+        videoId , 
+        {
+            $set:{
+                isPublished : !video?.isPublished
+            }
+        },
+        {new : true}
+    ) ;
+
+    if(!toggleVideoPublish){
+        throw new ApiError(500 , "failed to toogle video publish status")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200 , {isPublished : toggleVideoPublish.isPublished} , "video publish toggled successfully"))
+
 })
 
 export {
