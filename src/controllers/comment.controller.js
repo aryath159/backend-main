@@ -148,7 +148,7 @@ const updateComment = asyncHandler(async (req , res)=>{
         throw new ApiError(400 , "only comment owner can edit their commnet")
     }
 
-    const updatedComment = await Comment,findByIdAndUpdate(
+    const updatedComment = await Comment.findByIdAndUpdate(
         comment?._id ,
         {
             $set:{
