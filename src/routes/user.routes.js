@@ -44,9 +44,9 @@ router.route("/avatar").patch(verifyJWT , upload.single("avatar") , userAvatarUp
 
 router.route("/cover-image").patch(verifyJWT , upload.single("coverImage") , coverImageUpdate) // tested ok
 
-router.route("/c/:username").get(verifyJWT , getUserChannelProfile) 
+router.route("/c/:username").get(verifyJWT , getUserChannelProfile) // tested ok
 
-router.route("/history").get(verifyJWT , getWatchHistory) 
+router.route("/history").get(verifyJWT , getWatchHistory) // tested ok
 
 
 export default router ;
