@@ -155,8 +155,8 @@ const loginUser = asyncHandler( async (req ,res) => {
 
     return res
     .status(200)
-    .cookie("accessToken" , accessToken)
-    .cookie("refreshToken" , refreshtoken)
+    .cookie("accessToken" , accessToken , options)
+    .cookie("refreshToken" , refreshtoken , options)
     .json(
         new ApiResponse(
             200 ,
@@ -172,6 +172,7 @@ const loginUser = asyncHandler( async (req ,res) => {
 })
 
 const logoutUser = asyncHandler(async (req, res ) =>{
+    const username = req.user.username ;
     await User.findByIdAndUpdate(
         req.user._id , {
             $unset : {
@@ -193,7 +194,7 @@ const logoutUser = asyncHandler(async (req, res ) =>{
     .status(200)
     .clearCookie("accessToken" , options)
     .clearCookie("refreshToken" , options)
-    .json(new ApiResponse(200, {} , "user logged out successfully"))
+    .json(new ApiResponse(200, {username} , "user logged out successfully"))
 })
 
 const RefreshAccessToken = asyncHandler(async (req , res) =>{
