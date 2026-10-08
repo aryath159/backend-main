@@ -1,164 +1,194 @@
-
 import { Like } from "../models/like.models.js";
-import mongoose , {Schema} from "mongoose";
-import {Comment} from  "../models/comment.models.js"
+import mongoose , { isValidObjectId } from "mongoose";
+import { Comment } from "../models/comment.models.js"
 import { Video } from "../models/video.models.js"
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import  {asyncHandler}  from "../utils/asyncHandler.js";
-//get all comments for a video
+import { asyncHandler } from "../utils/asyncHandler.js";
 
-const getVideoComments = asyncHandler(async (req, res) =>{
-    const {videoId} = req.params
+// get all comments for a video
+const getVideoComments = asyncHandler(async (req , res) => {
+    const { videoId } = req.params
 
-    const {page = 1 , limit = 10} = req.query ;
+    const { page = 1 , limit = 10 } = req.query ;
+
+    if (!isValidObjectId(videoId)) {
+        throw new ApiError(400 , "Invalid videoId")
+    }
 
     const video = await Video.findById(videoId) ;
 
-    if(!video){
+    if (!video) {
         throw new ApiError(404 , "video not found") ;
     }
 
-    const commnetsAggregate = Comment.aggregate([
+    // guests have no req.user -> null never matches a like
+    const viewerId = req.user?._id ?? null ;
+
+    const commentsAggregate = Comment.aggregate([
         {
-            $match:{
-                video: new mongoose.Types.ObjectId(videoId)
+            $match : {
+                video : new mongoose.Types.ObjectId(videoId)
             }
         },
         {
-            $lookup:{
-               from:"users",
-               localField:"owner",
-               foreignField:"_id",
-               as :"owner"
+            $lookup : {
+                from : "users",
+                localField : "owner",
+                foreignField : "_id",
+                as : "owner",
+                pipeline : [
+                    {
+                        $project : {
+                            username : 1 ,
+                            fullname : 1 ,
+                            avatar : 1
+                        }
+                    }
+                ]
             }
         },
         {
-            $lookup:{
-                from:"likes",
-                localField:"_id",
-                foreignField:"comment",
-                as :"likes"
+            $lookup : {
+                from : "likes",
+                localField : "_id",
+                foreignField : "comment",
+                as : "likes"
             }
         },
         {
-            $addFields:{
-                likesCount:{
-                    $size: "$likes"
+            $addFields : {
+                likesCount : {
+                    $size : "$likes"
                 },
-                owner:{
-                    $first:"$owner"
+                owner : {
+                    $first : "$owner"
                 },
-                isLiked:{
-                    $cond:{
-                        if:{$in:[req.user?._id , "$likes.likedBy"]},
-                        then: true,
-                        else: false
+                isLiked : {
+                    $cond : {
+                        if : { $in : [ viewerId , "$likes.likedBy" ] },
+                        then : true,
+                        else : false
                     }
                 }
             }
         },
         {
-            $sort:{
-                createdAt:-1
+            $sort : {
+                createdAt : -1
             }
         },
         {
-            $project:{
-                content:1 ,
-                createdAt:1,
-                likesCount:1 ,
-                owner:{
-                    username:1,
-                    fullname:1,
-                    "avatar.url" :1 
-                },
+            $project : {
+                content : 1 ,
+                createdAt : 1 ,
+                likesCount : 1 ,
+                owner : 1 ,
                 isLiked : 1
             }
         }
-
     ]);
 
     const options = {
-        page : parseInt(page , 10),
-        limit : parseInt(limit , 10)
+        page : Math.max(parseInt(page , 10) || 1 , 1),
+        limit : Math.min(Math.max(parseInt(limit , 10) || 10 , 1) , 50)
     };
 
     const comments = await Comment.aggregatePaginate(
-        commnetsAggregate , options
+        commentsAggregate , options
     );
 
     return res
     .status(200)
-    .json(new ApiResponse(200, comments , "comments fetched successfully"))
-
+    .json(new ApiResponse(200 , comments , "comments fetched successfully"))
 }) ;
 
 
-// add commnet to a video
+// add comment to a video
+const addComment = asyncHandler(async (req , res) => {
+    const { videoId } = req.params ;
+    const { content } = req.body ;
 
-const addComment = asyncHandler(async(req , res) =>{
-    const {videoId} = req.params ;
-    const {content } = req.body ;
+    if (!isValidObjectId(videoId)) {
+        throw new ApiError(400 , "Invalid videoId")
+    }
 
-    if(!content){
+    if (typeof content !== "string" || !content.trim()) {
         throw new ApiError(400 , "content is required") ;
     }
 
     const video = await Video.findById(videoId);
 
-    if(!video){
+    if (!video) {
         throw new ApiError(404 , "video not found")
     }
 
     const comment = await Comment.create({
-        content , 
-        video: videoId,
-        owner:req.user?._id
+        content : content.trim() ,
+        video : videoId ,
+        owner : req.user?._id
     });
 
-    if(!comment){
+    if (!comment) {
         throw new ApiError(500 , "Failed to add comment please try again")
+    }
+
+    // send it back in the same shape getVideoComments uses, so the UI can show it right away
+    const newComment = {
+        _id : comment._id ,
+        content : comment.content ,
+        createdAt : comment.createdAt ,
+        likesCount : 0 ,
+        isLiked : false ,
+        owner : {
+            _id : req.user._id ,
+            username : req.user.username ,
+            fullname : req.user.fullname ,
+            avatar : req.user.avatar
+        }
     }
 
     return res
     .status(201)
-    .json(new ApiResponse(201, comment , "Comment addded successfully"))
+    .json(new ApiResponse(201 , newComment , "Comment added successfully"))
 }) ;
 
 
-// updtae a comment
-const updateComment = asyncHandler(async (req , res)=>{
+// update a comment
+const updateComment = asyncHandler(async (req , res) => {
 
-    const {commentId} = req.params ;
-    const {content} = req.body ;
+    const { commentId } = req.params ;
+    const { content } = req.body ;
 
-    if(!content){
+    if (!isValidObjectId(commentId)) {
+        throw new ApiError(400 , "Invalid commentId")
+    }
+
+    if (typeof content !== "string" || !content.trim()) {
         throw new ApiError(400 , "content is required")
     }
 
     const comment = await Comment.findById(commentId);
 
-    if(!comment){
-        throw new ApiError(404 ,"comment not found ") ;
+    if (!comment) {
+        throw new ApiError(404 , "comment not found") ;
     }
 
-    if(comment?.owner.toString() !== req.user?._id.toString()){
-        throw new ApiError(400 , "only comment owner can edit their commnet")
+    if (comment.owner.toString() !== req.user?._id.toString()) {
+        throw new ApiError(403 , "only the comment owner can edit their comment")
     }
 
     const updatedComment = await Comment.findByIdAndUpdate(
-        comment?._id ,
+        comment._id ,
         {
-            $set:{
-                content
+            $set : {
+                content : content.trim()
             }
         },
-        {new : true}
+        { new : true }
     );
 
-
-    if(!updatedComment){
+    if (!updatedComment) {
         throw new ApiError(500 , "Failed to edit comment please try again")
     }
 
@@ -167,35 +197,37 @@ const updateComment = asyncHandler(async (req , res)=>{
     .json(
         new ApiResponse(200 , updatedComment , "Comment edited successfully")
     );
-
 });
 
 
-// delete a commnert
+// delete a comment
+const deleteComment = asyncHandler( async (req , res) => {
+    const { commentId } = req.params ;
 
-const deleteComment = asyncHandler( async (req , res ) =>{
-    const {commentId} = req.params ;
+    if (!isValidObjectId(commentId)) {
+        throw new ApiError(400 , "Invalid commentId")
+    }
 
     const comment = await Comment.findById(commentId) ;
 
-    if(!comment){
-        throw new ApiError(404, "commnet not found");
+    if (!comment) {
+        throw new ApiError(404 , "comment not found");
     }
 
-    if(comment?.owner.toString() !== req.user?._id.toString()){
-        throw new ApiError(400 , "only commnet owner can delete the thrie commnet")
+    if (comment.owner.toString() !== req.user?._id.toString()) {
+        throw new ApiError(403 , "only the comment owner can delete their comment")
     }
 
     await Comment.findByIdAndDelete(commentId) ;
 
+    // remove ALL likes on this comment (not only the owner's)
     await Like.deleteMany({
-        comment:commentId ,
-        likedBy : req.user
+        comment : commentId
     })
 
-    return res 
+    return res
     .status(200)
-    .json(new ApiResponse(200 , {commentId} , "comment deleted successfully"))
+    .json(new ApiResponse(200 , { commentId } , "comment deleted successfully"))
 });
 
-export {getVideoComments , addComment , updateComment , deleteComment} ;
+export { getVideoComments , addComment , updateComment , deleteComment } ;

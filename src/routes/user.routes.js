@@ -1,17 +1,17 @@
 import { Router } from "express";
 import { changeCurrentPassword, coverImageUpdate, getCurrentUser, getUserChannelProfile, getWatchHistory, loginUser, logoutUser,
-         RefreshAccessToken, registerUser, 
+         RefreshAccessToken, registerUser,
          UpdateAccountDetails,
          userAvatarUpdate} from "../controllers/user.controller.js";
 
 import {upload} from "../middlewares/multer.middleware.js"
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT , verifyJWTOptional } from "../middlewares/auth.middleware.js";
 
 
 const router = Router() ;
 
-router.route("/register").post( 
-    
+router.route("/register").post(
+
     upload.fields([
         {
             name: "avatar" ,
@@ -23,30 +23,29 @@ router.route("/register").post(
         }
     ]) ,
 
-    registerUser) ; // tested ok
+    registerUser) ;
 
+router.route("/login").post(loginUser)
 
+//secured routes
+router.route("/logout").post( verifyJWT , logoutUser)
 
-router.route("/login" ).post(loginUser) // tested ok 
+router.route("/refresh-token").post(RefreshAccessToken)
 
-//secured routes 
-router.route("/logout").post( verifyJWT , logoutUser) // tested ok
+router.route("/change-password").post(verifyJWT , changeCurrentPassword)
 
-router.route("/refresh-token").post(RefreshAccessToken) // tested ok
+router.route("/current-user").get(verifyJWT , getCurrentUser)
 
-router.route("/change-password").post(verifyJWT , changeCurrentPassword) // tested ok
+router.route("/update-account").patch(verifyJWT , UpdateAccountDetails)
 
-router.route("/current-user").get(verifyJWT , getCurrentUser) // tested ok
+router.route("/avatar").patch(verifyJWT , upload.single("avatar") , userAvatarUpdate)
 
-router.route("/update-account").patch(verifyJWT , UpdateAccountDetails) // tested ok
+router.route("/cover-image").patch(verifyJWT , upload.single("coverImage") , coverImageUpdate)
 
-router.route("/avatar").patch(verifyJWT , upload.single("avatar") , userAvatarUpdate) // tested ok
+// public: anyone can open a channel page (isSubscribed is only true for a logged in viewer)
+router.route("/c/:username").get(verifyJWTOptional , getUserChannelProfile)
 
-router.route("/cover-image").patch(verifyJWT , upload.single("coverImage") , coverImageUpdate) // tested ok
-
-router.route("/c/:username").get(verifyJWT , getUserChannelProfile) // tested ok
-
-router.route("/history").get(verifyJWT , getWatchHistory) // tested ok
+router.route("/history").get(verifyJWT , getWatchHistory)
 
 
 export default router ;

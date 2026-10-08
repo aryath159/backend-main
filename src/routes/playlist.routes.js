@@ -1,12 +1,12 @@
-import {Router} from  "express" ;
+import { Router } from "express";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { upload } from "../middlewares/multer.middleware.js";
 
 import { addVideoToPlaylist, createPlaylist, deletePlaylist, getPlaylistById, getUserPlaylists, removeVideoFromPlaylist, updatePlaylist } from "../controllers/playlist.controller.js";
 
-const router = Router() ; 
+const router = Router() ;
 
-Router.use(verifyJWT ,upload.none()) ;
+// it was "Router.use" (capital R) before, which is not the router instance
+router.use(verifyJWT) ;
 
 router.route("/").post(createPlaylist) ;
 
@@ -18,9 +18,7 @@ router.route("/:playlistId")
 router.route("/add/:videoId/:playlistId").patch(addVideoToPlaylist);
 router.route("/remove/:videoId/:playlistId").patch(removeVideoFromPlaylist) ;
 
-router.route("/user/userId").get(getUserPlaylists) ;
+// was "/user/userId" (missing the colon)
+router.route("/user/:userId").get(getUserPlaylists) ;
 
-export default router   ;
-
-
-
+export default router ;

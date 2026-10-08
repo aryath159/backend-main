@@ -1,15 +1,16 @@
 import { Router } from "express";
-import {addComment, deleteComment, getVideoComments, updateComment} from "../controllers/comment.controller.js"
+import { addComment, deleteComment, getVideoComments, updateComment } from "../controllers/comment.controller.js"
 
-import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { upload } from "../middlewares/multer.middleware.js";
+import { verifyJWT , verifyJWTOptional } from "../middlewares/auth.middleware.js";
 
 
 const router = Router() ;
 
-router.use(verifyJWT , upload.none()) ; // apply verify jwt to all
+// guests can read comments (isLiked is only filled for a logged in viewer)
+router.route("/:videoId").get(verifyJWTOptional , getVideoComments)
 
-router.route("/:videoId").get(getVideoComments).post(addComment) ;
-router.route("/c/:commentId").delete(deleteComment).patch(updateComment) ;
+// everything else needs a login
+router.route("/:videoId").post(verifyJWT , addComment) ;
+router.route("/c/:commentId").delete(verifyJWT , deleteComment).patch(verifyJWT , updateComment) ;
 
 export default router ;
