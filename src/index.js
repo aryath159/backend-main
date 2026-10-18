@@ -15,6 +15,7 @@ connectDB()
     // handle server level errors
     server.on("error", (err) => {
       console.log("Server error: ", err);
+      process.exit(1) ;
     });
   })
   .catch((err) => {

@@ -1,6 +1,20 @@
 import mongoose from "mongoose";
 import { DB_NAME } from "../constants.js";
 
+
+
+mongoose.connection.on("error" , (err)=>{
+  console.log("MongoDb error" , err)
+})
+
+mongoose.connection.on("disconnected" , ()=>{
+  console.warn("mongodb disconnected") ;
+})
+
+mongoose.connection.on("reconnected" , () => {
+  console.log("MongoDB reconnected") ;
+})
+
 const connectDB = async () => {
   try {
     const connectionInstance = await mongoose.connect(
