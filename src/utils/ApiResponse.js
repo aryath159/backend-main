@@ -10,3 +10,8 @@ class ApiResponse {
 }
 
 export { ApiResponse }
+
+// 400 - 499 -> client errors
+// 500 - 599 -> server erros 
+
+// the condition will evalute to false , and this.succes will be set to false 
