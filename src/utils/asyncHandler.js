@@ -1,12 +1,14 @@
 // wraper function 
-
+// async handler is function that returns a function
 
 const asyncHandler = (requestHandler) => {
 
-    return  (req , res , next) => {
-        Promise.resolve( requestHandler( req , res , next ))
-        .catch( (err) => next(err))
-    }
+    return   (req , res , next) => {
+
+             Promise.resolve( requestHandler( req , res , next ))
+             .catch( (err) => next(err))
+             
+                }
 
 }
 

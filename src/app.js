@@ -80,6 +80,7 @@ app.use((err, req, res, next) => {
     success: false,
     errors: err.errors || [],
   });
+  
 });
 
 export { app };

@@ -8,6 +8,7 @@ import {
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import sendEmail from "../utils/sendEmail.js";
 
 const isProduction = process.env.NODE_ENV === "production";
 
@@ -108,6 +109,15 @@ const registerUser = asyncHandler( async (req , res) => {
             throw new ApiError(500 , "something went wrong while registering user");
         }
 
+        // separate try catch for email 
+        const email_msg = `<h1>welcome ${user.username}</h1>` ;
+        try {
+            sendEmail({email:user.email , subject: "welcome!" , message: email_msg}) ;
+        } catch (error) {
+            // just log it , no throw error
+            console.log("welcome email failed but user registerd" , error) ;
+        }
+
         return res.status(201).json(
             new ApiResponse(201 , createdUser , "user registered successfully")
         )
@@ -180,6 +190,7 @@ const loginUser = asyncHandler( async (req , res) => {
 })
 
 const logoutUser = asyncHandler(async (req, res) => {
+    
     await User.findByIdAndUpdate(
         req.user._id , {
             $unset : {
