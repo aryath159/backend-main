@@ -115,7 +115,7 @@ const registerUser = asyncHandler( async (req , res) => {
             sendEmail({email:user.email , subject: "welcome!" , message: email_msg}) ;
         } catch (error) {
             // just log it , no throw error
-            console.log("welcome email failed but user registerd" , error) ;
+            console.log("welcome email failed but user registerd" , error)
         }
 
         return res.status(201).json(
